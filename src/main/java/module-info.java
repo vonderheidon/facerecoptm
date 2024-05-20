@@ -2,6 +2,7 @@ module br.com.catolicapb.facerecoptm {
     requires javafx.controls;
     requires javafx.fxml;
     requires org.bytedeco.opencv;
+    requires libtensorflow;
 
 
     opens br.com.catolicapb.facerecoptm to javafx.fxml;
