@@ -79,25 +79,35 @@ public class MainController {
     }
 
     private void startCamera() {
-        timeline = new Timeline(new KeyFrame(Duration.millis(200), event -> captureAndRecognize()));
+        timeline = new Timeline(new KeyFrame(Duration.millis(100), event -> captureAndRecognize()));
         timeline.setCycleCount(Timeline.INDEFINITE);
         timeline.play();
     }
 
     private void captureAndRecognize() {
         Mat frame = imageCapture.captureImage();
-        Mat grayFrame = imageCapture.captureGrayscaleImage();
-        Rect[] facesArray = imageCapture.detectFaces(grayFrame);
+        new Thread(() -> {
+            Mat grayFrame = imageCapture.captureGrayscaleImage();
+            Rect[] facesArray = imageCapture.detectFaces(grayFrame);
 
-        for (Rect face : facesArray) {
-            Mat faceMat = new Mat(grayFrame, face);
-            String label = faceRecognizer.recognize(faceMat);
-            Imgproc.putText(frame, label, face.tl(), Imgproc.FONT_HERSHEY_SIMPLEX, 1, new Scalar(0, 255, 0), 2);
-            Imgproc.rectangle(frame, face.tl(), face.br(), new Scalar(0, 255, 0), 2);
-        }
+            for (Rect face : facesArray) {
+                if (face.width < 30 || face.height < 30) { // Ignorar detecções muito pequenas
+                    continue;
+                }
 
-        Image imageToShow = mat2Image(frame);
-        Platform.runLater(() -> imageView.setImage(imageToShow));
+                Mat faceMat = new Mat(grayFrame, face);
+                String label = faceRecognizer.recognize(faceMat);
+                Imgproc.putText(frame, label, face.tl(), Imgproc.FONT_HERSHEY_SIMPLEX, 1, new Scalar(0, 255, 0), 2);
+                Imgproc.rectangle(frame, face.tl(), face.br(), new Scalar(0, 255, 0), 2);
+                faceMat.release(); // Liberação de recursos
+            }
+
+            Image imageToShow = mat2Image(frame);
+            Platform.runLater(() -> imageView.setImage(imageToShow));
+
+            frame.release(); // Liberação de recursos
+            grayFrame.release(); // Liberação de recursos
+        }).start();
     }
 
     private Image mat2Image(Mat frame) {

@@ -20,7 +20,7 @@ public class FaceRecognizer {
     private Graph graph;
     private Session session;
     private Map<String, float[]> knownEmbeddings;
-    private double threshold = 1.0; // Ajuste conforme necessário
+    private double threshold = 0.9; // Ajuste conforme necessário
 
     public FaceRecognizer() {
         try {
@@ -68,8 +68,14 @@ public class FaceRecognizer {
         return embeddingArray[0];
     }
 
+    private Map<String, float[]> embeddingsCache = new HashMap<>();
+
     public void addKnownEmbedding(String label, Mat image) {
-        float[] embedding = getEmbedding(image);
+        float[] embedding = embeddingsCache.get(label);
+        if (embedding == null) {
+            embedding = getEmbedding(image);
+            embeddingsCache.put(label, embedding);
+        }
         knownEmbeddings.put(label, embedding);
     }
 
