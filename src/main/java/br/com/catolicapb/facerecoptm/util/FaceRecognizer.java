@@ -1,5 +1,6 @@
 package br.com.catolicapb.facerecoptm.util;
 
+import br.com.catolicapb.facerecoptm.connection.ConnectionToMySQL;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Size;
@@ -12,6 +13,7 @@ import org.tensorflow.Tensors;
 import java.nio.FloatBuffer;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.sql.ResultSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,7 +22,7 @@ public class FaceRecognizer {
     private Graph graph;
     private Session session;
     private Map<String, float[]> knownEmbeddings;
-    private double threshold = 0.9; // Ajuste conforme necessário
+    private double threshold = 1.2;
 
     public FaceRecognizer() {
         try {
@@ -29,6 +31,23 @@ public class FaceRecognizer {
             graph.importGraphDef(graphDef);
             session = new Session(graph);
             knownEmbeddings = new HashMap<>();
+            loadKnownEmbeddings();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public boolean hasKnownEmbeddings() {
+        return !knownEmbeddings.isEmpty();
+    }
+
+    public void loadKnownEmbeddings() {
+        try (ResultSet rs = ConnectionToMySQL.getEmbeddings()) {
+            while (rs.next()) {
+                String name = rs.getString("name");
+                float[] embedding = ConnectionToMySQL.toFloatArray(rs.getBytes("embedding"));
+                knownEmbeddings.put(name, embedding);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -36,7 +55,6 @@ public class FaceRecognizer {
 
     private Mat preprocessImage(Mat image) {
         Mat processedImage = new Mat();
-        // Verificar o número de canais
         if (image.channels() == 3) {
             Imgproc.cvtColor(image, processedImage, Imgproc.COLOR_BGR2RGB);
         } else {
@@ -54,7 +72,7 @@ public class FaceRecognizer {
         preprocessedImage.get(0, 0, floatBuffer.array());
         Tensor<Float> imageTensor = Tensor.create(new long[]{1, 160, 160, 3}, floatBuffer);
 
-        Tensor<Boolean> phaseTrain = Tensors.create(false); // Falso para inferência
+        Tensor<Boolean> phaseTrain = Tensors.create(false);
 
         List<Tensor<?>> outputs = session.runner()
                 .feed("input", imageTensor)
@@ -68,15 +86,14 @@ public class FaceRecognizer {
         return embeddingArray[0];
     }
 
-    private Map<String, float[]> embeddingsCache = new HashMap<>();
-
     public void addKnownEmbedding(String label, Mat image) {
-        float[] embedding = embeddingsCache.get(label);
-        if (embedding == null) {
-            embedding = getEmbedding(image);
-            embeddingsCache.put(label, embedding);
+        float[] embedding = getEmbedding(image);
+        try {
+            ConnectionToMySQL.saveEmbedding(label, embedding);
+            knownEmbeddings.put(label + "_" + System.currentTimeMillis(), embedding);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        knownEmbeddings.put(label, embedding);
     }
 
     public String recognize(Mat image) {

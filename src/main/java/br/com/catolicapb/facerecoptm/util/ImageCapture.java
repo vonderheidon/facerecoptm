@@ -24,6 +24,7 @@ public class ImageCapture {
         Mat frame = new Mat();
         if (capture.isOpened()) {
             capture.read(frame);
+            Core.flip(frame, frame, 1);
         }
         return frame;
     }
@@ -42,7 +43,7 @@ public class ImageCapture {
         //minNeighbors = 3 a 5
         //minSize = 30x30
         //maxSize = 2x2
-        faceDetector.detectMultiScale(frame, faceDetections, 1.2, 5, 0, new Size(50, 50), new Size(frame.width()/2.3, frame.height()/2.3)); // Ajuste dos parâmetros de detecção
+        faceDetector.detectMultiScale(frame, faceDetections, 1.3, 7, 0, new Size(50, 50), new Size(frame.width()/2.3, frame.height()/2.3)); // Ajuste dos parâmetros de detecção
         return faceDetections.toArray();
     }
 

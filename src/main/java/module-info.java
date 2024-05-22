@@ -3,6 +3,7 @@ module br.com.catolicapb.facerecoptm {
     requires javafx.fxml;
     requires org.bytedeco.opencv;
     requires libtensorflow;
+    requires java.sql;
 
 
     opens br.com.catolicapb.facerecoptm to javafx.fxml;
