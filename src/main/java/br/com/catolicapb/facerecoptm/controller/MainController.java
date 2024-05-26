@@ -9,6 +9,7 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
@@ -37,11 +38,15 @@ public class MainController {
     private FaceRecognizer faceRecognizer;
     private ImageCapture imageCapture;
     private ExecutorService executor;
+    private long lastRecognitionChangeTime;
+    private Color targetColor = Color.GRAY;
+    private long lastFrameTime;
 
     @FXML
     private void initialize() {
         faceRecognizer = new FaceRecognizer();
         imageCapture = new ImageCapture();
+        lblLed.setFill(Color.GRAY);
 
         if (checkForTrainingImages()) {
             trainModel();
@@ -67,7 +72,11 @@ public class MainController {
         executor = Executors.newSingleThreadExecutor();
         executor.submit(() -> {
             while (!Thread.currentThread().isInterrupted()) {
-                captureAndRecognize();
+                long currentTime = System.currentTimeMillis();
+                if (currentTime - lastFrameTime >= 50) { // Captura e processa a cada 200ms
+                    captureAndRecognize();
+                    lastFrameTime = currentTime;
+                }
                 try {
                     Thread.sleep(10);
                 } catch (InterruptedException e) {
@@ -82,15 +91,44 @@ public class MainController {
         Mat grayFrame = imageCapture.captureGrayscaleImage();
         Rect[] facesArray = imageCapture.detectFaces(grayFrame);
 
+        boolean recognized = false;
         for (Rect face : facesArray) {
             Mat faceMat = new Mat(grayFrame, face);
             String label = faceRecognizer.recognize(faceMat);
             Imgproc.putText(frame, label, face.tl(), Imgproc.FONT_HERSHEY_SIMPLEX, 1, new Scalar(0, 255, 0), 2);
             Imgproc.rectangle(frame, face.tl(), face.br(), new Scalar(0, 255, 0), 2);
+
+            if (!label.equals("Desconhecido")) {
+                recognized = true;
+                setTargetColor(Color.GREEN);
+            }
         }
+
+        if (!recognized) {
+            if (facesArray.length > 0) {
+                setTargetColor(Color.RED);
+            } else {
+                setTargetColor(Color.GRAY);
+            }
+        }
+
+        updateLedColor();
 
         Image imageToShow = mat2Image(frame);
         Platform.runLater(() -> imageView.setImage(imageToShow));
+    }
+
+    private void setTargetColor(Color color) {
+        if (!targetColor.equals(color)) {
+            targetColor = color;
+            lastRecognitionChangeTime = System.currentTimeMillis();
+        }
+    }
+
+    private void updateLedColor() {
+        if (System.currentTimeMillis() - lastRecognitionChangeTime > 1000) {
+            Platform.runLater(() -> lblLed.setFill(targetColor));
+        }
     }
 
     private Image mat2Image(Mat frame) {

@@ -22,7 +22,7 @@ public class FaceRecognizer {
     private Graph graph;
     private Session session;
     private Map<String, float[]> knownEmbeddings;
-    private double threshold = 1.2;
+    private double threshold = 0.8;
 
     public FaceRecognizer() {
         try {

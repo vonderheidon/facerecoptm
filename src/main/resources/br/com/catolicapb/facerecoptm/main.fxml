@@ -3,7 +3,6 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TextArea?>
-<?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.shape.Circle?>
@@ -11,16 +10,11 @@
 
 <AnchorPane prefHeight="535.0" prefWidth="660.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="br.com.catolicapb.facerecoptm.controller.MainController">
    <children>
-        <ImageView fx:id="imageView" fitHeight="300" fitWidth="400" layoutX="25.0" layoutY="51.0" />
+        <ImageView fx:id="imageView" fitHeight="300" fitWidth="400" layoutX="25.0" layoutY="64.0" />
         <TextArea fx:id="logArea" editable="false" layoutX="14.0" layoutY="411.0" prefHeight="100" prefWidth="400" />
         <Button fx:id="registerButton" layoutX="32.0" layoutY="374.0" text="Registrar Novo Usuário" />
-      <Circle fx:id="lblLed" fill="DODGERBLUE" layoutX="544.0" layoutY="164.0" radius="49.0" stroke="BLACK" strokeType="INSIDE" />
-      <ImageView fitHeight="203.0" fitWidth="207.0" layoutX="442.0" layoutY="325.0" pickOnBounds="true" preserveRatio="true">
-         <image>
-            <Image url="@699d437e78543ab7059b3d9a06885e18173ec7bb.gif" />
-         </image>
-      </ImageView>
-      <Label layoutX="153.0" layoutY="7.0" text="Pograma di Recoessimento Fassiau">
+      <Circle fx:id="lblLed" fill="GREY" layoutX="546.0" layoutY="234.0" radius="49.0" stroke="BLACK" strokeType="INSIDE" />
+      <Label layoutX="135.0" layoutY="16.0" prefHeight="35.0" prefWidth="389.0" text="Programa de Reconhecimento Facial">
          <font>
             <Font size="24.0" />
          </font>
