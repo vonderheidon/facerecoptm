@@ -1,5 +1,6 @@
 package br.com.catolicapb.facerecoptm.controller;
 
+import br.com.catolicapb.facerecoptm.connection.ConnectionToRaspberry;
 import br.com.catolicapb.facerecoptm.util.FaceRecognizer;
 import br.com.catolicapb.facerecoptm.util.ImageCapture;
 import javafx.application.Platform;
@@ -28,25 +29,24 @@ public class MainController {
     private ImageView imageView;
     @FXML
     private Circle lblLed;
-
     @FXML
     private TextArea logArea;
-
     @FXML
     private Button registerButton;
-
     private FaceRecognizer faceRecognizer;
     private ImageCapture imageCapture;
     private ExecutorService executor;
     private long lastRecognitionChangeTime;
     private Color targetColor = Color.GRAY;
     private long lastFrameTime;
+    private Color lastSentColor = Color.GRAY;
 
     @FXML
     private void initialize() {
         faceRecognizer = new FaceRecognizer();
         imageCapture = new ImageCapture();
         lblLed.setFill(Color.GRAY);
+        ConnectionToRaspberry.sendLedCommand(0, 1, 0);
         faceRecognizer.loadModelAsync().thenRun(() -> {
             Platform.runLater(() -> {
                 if (checkForTrainingImages()) {
@@ -123,7 +123,23 @@ public class MainController {
 
     private void updateLedColor() {
         if (System.currentTimeMillis() - lastRecognitionChangeTime > 1000) {
-            Platform.runLater(() -> lblLed.setFill(targetColor));
+            Platform.runLater(() -> {
+                lblLed.setFill(targetColor);
+                if (!targetColor.equals(lastSentColor)) {
+                    sendLedCommand(targetColor);
+                    lastSentColor = targetColor;
+                }
+            });
+        }
+    }
+
+    private void sendLedCommand(Color color) {
+        if (color.equals(Color.GRAY)) {
+            ConnectionToRaspberry.sendLedCommand(0, 1, 0);
+        } else if (color.equals(Color.GREEN)) {
+            ConnectionToRaspberry.sendLedCommand(1, 0, 0);
+        } else if (color.equals(Color.RED)) {
+            ConnectionToRaspberry.sendLedCommand(0, 0, 1);
         }
     }
 

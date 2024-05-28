@@ -13,7 +13,7 @@
         <ImageView fx:id="imageView" fitHeight="300" fitWidth="400" layoutX="25.0" layoutY="64.0" />
         <TextArea fx:id="logArea" editable="false" layoutX="14.0" layoutY="411.0" prefHeight="100" prefWidth="400" />
         <Button fx:id="registerButton" layoutX="32.0" layoutY="374.0" text="Registrar Novo Usuário" />
-      <Circle fx:id="lblLed" fill="GREY" layoutX="546.0" layoutY="234.0" radius="49.0" stroke="BLACK" strokeType="INSIDE" />
+      <Circle fx:id="lblLed" fill="#0004ff" layoutX="546.0" layoutY="234.0" radius="49.0" stroke="BLACK" strokeType="INSIDE" />
       <Label layoutX="135.0" layoutY="16.0" prefHeight="35.0" prefWidth="389.0" text="Programa de Reconhecimento Facial">
          <font>
             <Font size="24.0" />

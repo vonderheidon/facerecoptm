@@ -10,9 +10,7 @@ public class MainApp extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        // Carregue a biblioteca nativa do OpenCV
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
-
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/br/com/catolicapb/facerecoptm/main.fxml"));
         Scene scene = new Scene(loader.load());
         primaryStage.setTitle("FaceRecOptm");
