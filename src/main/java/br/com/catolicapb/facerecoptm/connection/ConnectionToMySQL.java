@@ -1,8 +1,9 @@
 package br.com.catolicapb.facerecoptm.connection;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -11,14 +12,22 @@ public class ConnectionToMySQL {
     private static final String URL = "jdbc:mysql://localhost:3306/facerecognition";
     private static final String USER = "root";
     private static final String PASSWORD = "Bl@ck0246";
+    private static HikariDataSource dataSource;
+
+    static {
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl(URL);
+        config.setUsername(USER);
+        config.setPassword(PASSWORD);
+        dataSource = new HikariDataSource(config);
+    }
 
     public static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(URL, USER, PASSWORD);
+        return dataSource.getConnection();
     }
 
     public static void saveEmbedding(String name, float[] embedding) throws SQLException {
         String sql = "INSERT INTO known_faces (name, embedding) VALUES (?, ?)";
-
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, name);
@@ -27,10 +36,10 @@ public class ConnectionToMySQL {
         }
     }
 
-    public static ResultSet getEmbeddings() throws SQLException {
+    public static ResultSet getEmbeddings(Connection conn) throws SQLException {
         String sql = "SELECT name, embedding FROM known_faces";
-        Connection conn = getConnection();
-        return conn.createStatement().executeQuery(sql);
+        PreparedStatement pstmt = conn.prepareStatement(sql);
+        return pstmt.executeQuery();
     }
 
     private static byte[] toByteArray(float[] floatArray) {

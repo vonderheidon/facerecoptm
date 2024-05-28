@@ -47,16 +47,17 @@ public class MainController {
         faceRecognizer = new FaceRecognizer();
         imageCapture = new ImageCapture();
         lblLed.setFill(Color.GRAY);
-
-        if (checkForTrainingImages()) {
-            trainModel();
-        } else {
-            logArea.appendText("Nenhum modelo disponível.\n");
-        }
-
-        startCamera();
-
-        registerButton.setOnAction(event -> registerNewUser());
+        faceRecognizer.loadModelAsync().thenRun(() -> {
+            Platform.runLater(() -> {
+                if (checkForTrainingImages()) {
+                    trainModel();
+                } else {
+                    logArea.appendText("Nenhum modelo disponível.\n");
+                }
+                startCamera();
+                registerButton.setOnAction(event -> registerNewUser());
+            });
+        });
     }
 
     private boolean checkForTrainingImages() {
@@ -73,7 +74,7 @@ public class MainController {
         executor.submit(() -> {
             while (!Thread.currentThread().isInterrupted()) {
                 long currentTime = System.currentTimeMillis();
-                if (currentTime - lastFrameTime >= 50) { // Captura e processa a cada 200ms
+                if (currentTime - lastFrameTime >= 50) {
                     captureAndRecognize();
                     lastFrameTime = currentTime;
                 }
@@ -90,20 +91,17 @@ public class MainController {
         Mat frame = imageCapture.captureImage();
         Mat grayFrame = imageCapture.captureGrayscaleImage();
         Rect[] facesArray = imageCapture.detectFaces(grayFrame);
-
         boolean recognized = false;
         for (Rect face : facesArray) {
             Mat faceMat = new Mat(grayFrame, face);
             String label = faceRecognizer.recognize(faceMat);
             Imgproc.putText(frame, label, face.tl(), Imgproc.FONT_HERSHEY_SIMPLEX, 1, new Scalar(0, 255, 0), 2);
             Imgproc.rectangle(frame, face.tl(), face.br(), new Scalar(0, 255, 0), 2);
-
             if (!label.equals("Desconhecido")) {
                 recognized = true;
                 setTargetColor(Color.GREEN);
             }
         }
-
         if (!recognized) {
             if (facesArray.length > 0) {
                 setTargetColor(Color.RED);
@@ -111,9 +109,7 @@ public class MainController {
                 setTargetColor(Color.GRAY);
             }
         }
-
         updateLedColor();
-
         Image imageToShow = mat2Image(frame);
         Platform.runLater(() -> imageView.setImage(imageToShow));
     }
@@ -142,7 +138,6 @@ public class MainController {
         dialog.setTitle("Registrar Novo Usuário");
         dialog.setHeaderText("Insira o nome da pessoa:");
         dialog.setContentText("Nome:");
-
         Optional<String> result = dialog.showAndWait();
         result.ifPresent(name -> {
             captureImagesForTraining(name);
@@ -154,7 +149,6 @@ public class MainController {
         for (int i = 0; i < numImages; i++) {
             Mat frame = imageCapture.captureGrayscaleImage();
             Rect[] facesArray = imageCapture.detectFaces(frame);
-
             if (facesArray.length == 1) {
                 Mat face = new Mat(frame, facesArray[0]);
                 faceRecognizer.addKnownEmbedding(name, face);
@@ -162,7 +156,6 @@ public class MainController {
             } else {
                 i--;
             }
-
             try {
                 Thread.sleep(200);
             } catch (InterruptedException e) {

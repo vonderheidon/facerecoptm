@@ -13,10 +13,12 @@ import org.tensorflow.Tensors;
 import java.nio.FloatBuffer;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 public class FaceRecognizer {
     private Graph graph;
@@ -25,24 +27,30 @@ public class FaceRecognizer {
     private double threshold = 0.8;
 
     public FaceRecognizer() {
-        try {
-            byte[] graphDef = Files.readAllBytes(Paths.get("C:\\Users\\jeffe\\IdeaProjects\\FaceRecOptm\\src\\main\\resources\\br\\com\\catolicapb\\facerecoptm\\20180408-102900.pb"));
-            graph = new Graph();
-            graph.importGraphDef(graphDef);
-            session = new Session(graph);
-            knownEmbeddings = new HashMap<>();
-            loadKnownEmbeddings();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        knownEmbeddings = new HashMap<>();
     }
 
     public boolean hasKnownEmbeddings() {
         return !knownEmbeddings.isEmpty();
     }
 
+    public CompletableFuture<Void> loadModelAsync() {
+        return CompletableFuture.runAsync(() -> {
+            try {
+                byte[] graphDef = Files.readAllBytes(Paths.get("C:\\Users\\jeffe\\IdeaProjects\\FaceRecOptm\\src\\main\\resources\\br\\com\\catolicapb\\facerecoptm\\20180408-102900.pb"));
+                graph = new Graph();
+                graph.importGraphDef(graphDef);
+                session = new Session(graph);
+                loadKnownEmbeddings();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
     public void loadKnownEmbeddings() {
-        try (ResultSet rs = ConnectionToMySQL.getEmbeddings()) {
+        try (Connection conn = ConnectionToMySQL.getConnection();
+             ResultSet rs = ConnectionToMySQL.getEmbeddings(conn)) {
             while (rs.next()) {
                 String name = rs.getString("name");
                 float[] embedding = ConnectionToMySQL.toFloatArray(rs.getBytes("embedding"));
@@ -60,7 +68,6 @@ public class FaceRecognizer {
         } else {
             Imgproc.cvtColor(image, processedImage, Imgproc.COLOR_GRAY2RGB);
         }
-
         Imgproc.resize(processedImage, processedImage, new Size(160, 160));
         processedImage.convertTo(processedImage, CvType.CV_32F, 1.0 / 255.0);
         return processedImage;
@@ -71,18 +78,14 @@ public class FaceRecognizer {
         FloatBuffer floatBuffer = FloatBuffer.allocate(160 * 160 * 3);
         preprocessedImage.get(0, 0, floatBuffer.array());
         Tensor<Float> imageTensor = Tensor.create(new long[]{1, 160, 160, 3}, floatBuffer);
-
         Tensor<Boolean> phaseTrain = Tensors.create(false);
-
         List<Tensor<?>> outputs = session.runner()
                 .feed("input", imageTensor)
                 .feed("phase_train", phaseTrain)
                 .fetch("embeddings")
                 .run();
-
         float[][] embeddingArray = new float[1][512];
         outputs.get(0).copyTo(embeddingArray);
-
         return embeddingArray[0];
     }
 
@@ -100,7 +103,6 @@ public class FaceRecognizer {
         float[] embedding = getEmbedding(image);
         String recognizedLabel = "Desconhecido";
         double minDistance = Double.MAX_VALUE;
-
         for (Map.Entry<String, float[]> entry : knownEmbeddings.entrySet()) {
             double distance = calculateDistance(embedding, entry.getValue());
             if (distance < minDistance && distance < threshold) {
@@ -108,7 +110,6 @@ public class FaceRecognizer {
                 recognizedLabel = entry.getKey();
             }
         }
-
         return recognizedLabel;
     }
 
