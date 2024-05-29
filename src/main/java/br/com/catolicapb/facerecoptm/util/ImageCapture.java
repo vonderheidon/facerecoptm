@@ -20,7 +20,7 @@ public class ImageCapture {
         capture = new VideoCapture(0);
         capture.set(Videoio.CAP_PROP_FRAME_WIDTH, 640);
         capture.set(Videoio.CAP_PROP_FRAME_HEIGHT, 480);
-        faceDetector = new CascadeClassifier("C:\\Users\\jeffe\\IdeaProjects\\facerecoptm\\src\\main\\resources\\br\\com\\catolicapb\\facerecoptm\\haarcascade_frontalface_default.xml");
+        faceDetector = new CascadeClassifier("src/main/resources/br/com/catolicapb/facerecoptm/haarcascade_frontalface_default.xml");
     }
 
     public Mat captureImage() {
@@ -47,7 +47,7 @@ public class ImageCapture {
         //minNeighbors = 3 a 5
         //minSize = 30x30
         //maxSize = 2x2
-        faceDetector.detectMultiScale(frame, faceDetections, 1.1, 5, 0, new Size(50, 50), new Size(frame.width()/1.5, frame.height()/1.5));
+        faceDetector.detectMultiScale(frame, faceDetections, 1.1, 7, 0, new Size(50, 50), new Size());
         return faceDetections.toArray();
     }
 

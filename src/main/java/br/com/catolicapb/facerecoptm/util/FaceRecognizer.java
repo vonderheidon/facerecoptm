@@ -37,7 +37,7 @@ public class FaceRecognizer {
     public CompletableFuture<Void> loadModelAsync() {
         return CompletableFuture.runAsync(() -> {
             try {
-                byte[] graphDef = Files.readAllBytes(Paths.get("C:\\Users\\jeffe\\IdeaProjects\\FaceRecOptm\\src\\main\\resources\\br\\com\\catolicapb\\facerecoptm\\20180408-102900.pb"));
+                byte[] graphDef = Files.readAllBytes(Paths.get("src/main/resources/br/com/catolicapb/facerecoptm/20180408-102900.pb"));
                 graph = new Graph();
                 graph.importGraphDef(graphDef);
                 session = new Session(graph);
@@ -93,7 +93,7 @@ public class FaceRecognizer {
         float[] embedding = getEmbedding(image);
         try {
             ConnectionToMySQL.saveEmbedding(label, embedding);
-            knownEmbeddings.put(label + "_" + System.currentTimeMillis(), embedding);
+            knownEmbeddings.put(label, embedding);
         } catch (Exception e) {
             e.printStackTrace();
         }
