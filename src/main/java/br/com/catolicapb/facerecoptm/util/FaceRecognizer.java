@@ -1,6 +1,6 @@
 package br.com.catolicapb.facerecoptm.util;
 
-import br.com.catolicapb.facerecoptm.connection.ConnectionToMySQL;
+import br.com.catolicapb.facerecoptm.dao.EmbeddingDao;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Size;
@@ -13,11 +13,9 @@ import org.tensorflow.Tensors;
 import java.nio.FloatBuffer;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.sql.Connection;
-import java.sql.ResultSet;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class FaceRecognizer {
@@ -41,24 +39,11 @@ public class FaceRecognizer {
                 graph = new Graph();
                 graph.importGraphDef(graphDef);
                 session = new Session(graph);
-                loadKnownEmbeddings();
+                knownEmbeddings = EmbeddingDao.loadKnownEmbeddings();
             } catch (Exception e) {
                 e.printStackTrace();
             }
         });
-    }
-
-    public void loadKnownEmbeddings() {
-        try (Connection conn = ConnectionToMySQL.getConnection();
-             ResultSet rs = ConnectionToMySQL.getEmbeddings(conn)) {
-            while (rs.next()) {
-                String name = rs.getString("name");
-                float[] embedding = ConnectionToMySQL.toFloatArray(rs.getBytes("embedding"));
-                knownEmbeddings.put(name, embedding);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     private Mat preprocessImage(Mat image) {
@@ -92,7 +77,7 @@ public class FaceRecognizer {
     public void addKnownEmbedding(String label, Mat image) {
         float[] embedding = getEmbedding(image);
         try {
-            ConnectionToMySQL.saveEmbedding(label, embedding);
+            EmbeddingDao.saveEmbedding(label, embedding);
             knownEmbeddings.put(label, embedding);
         } catch (Exception e) {
             e.printStackTrace();
@@ -119,10 +104,5 @@ public class FaceRecognizer {
             sum += Math.pow(emb1[i] - emb2[i], 2);
         }
         return Math.sqrt(sum);
-    }
-
-    public void close() {
-        session.close();
-        graph.close();
     }
 }

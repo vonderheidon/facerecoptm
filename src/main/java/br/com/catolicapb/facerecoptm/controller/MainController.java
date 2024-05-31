@@ -68,7 +68,12 @@ public class MainController {
             faceRecognizer.loadModelAsync().thenRun(() -> {
                 Platform.runLater(() -> {
                     if (checkForTrainingImages()) {
-                        trainModel();
+                        // Carregue os embeddings conhecidos apenas se não estiverem carregados
+                        if (faceRecognizer.hasKnownEmbeddings()) {
+                            logArea.appendText("Embeddings conhecidos já carregados.\n");
+                        } else {
+                            trainModel();
+                        }
                     } else {
                         logArea.appendText("Nenhum modelo disponível.\n");
                     }
@@ -80,13 +85,15 @@ public class MainController {
         }
     }
 
+
     private boolean checkForTrainingImages() {
         return faceRecognizer.hasKnownEmbeddings();
     }
 
     private void trainModel() {
-        faceRecognizer.loadKnownEmbeddings();
-        logArea.appendText("Modelo treinado com sucesso.\n");
+        faceRecognizer.loadModelAsync().thenRun(() -> {
+            logArea.appendText("Modelo treinado com sucesso.\n");
+        });
     }
 
     private void startCamera() {
