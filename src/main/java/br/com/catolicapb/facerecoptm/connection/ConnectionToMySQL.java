@@ -9,14 +9,7 @@ public class ConnectionToMySQL {
     private static final String USER = "root";
     private static final String PASSWORD = "Bl@ck0246";
 
-    public static Connection getConnection() {
-        Connection connection = null;
-        try {
-            connection = DriverManager.getConnection(URL, USER, PASSWORD);
-            System.out.println("Conexão realizada com sucesso.");
-        } catch (SQLException ex) {
-            System.err.println("Erro ao conectar ao banco de dados.\n".concat(ex.getMessage()));
-        }
-        return connection;
+    public static Connection getConnection() throws SQLException {
+        return DriverManager.getConnection(URL, USER, PASSWORD);
     }
 }

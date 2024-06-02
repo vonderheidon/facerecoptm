@@ -20,7 +20,7 @@ public class ImageCapture {
         capture = new VideoCapture(0);
         capture.set(Videoio.CAP_PROP_FRAME_WIDTH, 640);
         capture.set(Videoio.CAP_PROP_FRAME_HEIGHT, 480);
-        faceDetector = new CascadeClassifier("src/main/resources/br/com/catolicapb/facerecoptm/haarcascade_frontalface_default.xml");
+        faceDetector = new CascadeClassifier("src/main/resources/br/com/catolicapb/facerecoptm/TrainingModels/haarcascade_frontalface_default.xml");
     }
 
     public Mat captureImage() {

@@ -8,22 +8,20 @@ import java.util.concurrent.Executors;
 
 public class ConnectionToRaspberry {
     private static final ExecutorService executor = Executors.newSingleThreadExecutor();
-    private static boolean isRaspOn = false; //se for executar o código com o rasp altere para true
+    private static final boolean isRaspOn = false; //se for executar o código com o rasp altere para true
 
     public static void sendHttpRequest(String command) {
         if (isRaspOn) {
             executor.submit(() -> {
                 try {
-                    URL url = new URL("http://192.168.2.222:5000/led");
+                    URL url = new URL("http://192.168.2.111:5000/led");
                     HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                     connection.setRequestMethod("POST");
                     connection.setDoOutput(true);
-                    String params = "action=" + command;
-                    OutputStream os = connection.getOutputStream();
-                    os.write(params.getBytes());
-                    os.flush();
-                    os.close();
-
+                    try (OutputStream os = connection.getOutputStream()) {
+                        os.write(("action=" + command).getBytes());
+                        os.flush();
+                    }
                     int responseCode = connection.getResponseCode();
                     System.out.println("Response Code: " + responseCode);
                 } catch (Exception e) {
@@ -33,8 +31,7 @@ public class ConnectionToRaspberry {
         }
     }
 
-    public static void sendLedCommand(int w, int v, int b) {
-        String command = w + "," + v + "," + b;
-        sendHttpRequest(command);
+    public static void sendLedCommand(int r, int g, int b) {
+        sendHttpRequest(r + "," + g + "," + b);
     }
 }

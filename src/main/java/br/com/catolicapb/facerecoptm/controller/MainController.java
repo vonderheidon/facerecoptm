@@ -23,6 +23,7 @@ import java.io.ByteArrayInputStream;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MainController {
     @FXML
@@ -35,71 +36,89 @@ public class MainController {
     private Button registerButton;
     @FXML
     private Button captureAndRecognizeButton;
-    private FaceRecognizer faceRecognizer;
-    private ImageCapture imageCapture;
+    @FXML
+    private Button startStopCameraButton;
+
+    private final FaceRecognizer faceRecognizer = new FaceRecognizer();
+    private final ImageCapture imageCapture = new ImageCapture();
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+
     private long lastRecognitionChangeTime;
     private Color targetColor = Color.GRAY;
     private long lastFrameTime;
     private Color lastSentColor = Color.GRAY;
     private boolean isRecognitionActive = false;
+    private AtomicBoolean isCameraActive = new AtomicBoolean(false);
+    private Image placeholderImage;
 
     @FXML
     private void initialize() {
-        faceRecognizer = new FaceRecognizer();
-        imageCapture = new ImageCapture();
         lblLed.setFill(Color.GRAY);
         lblLed.setVisible(false);
         ConnectionToRaspberry.sendLedCommand(0, 0, 0);
-        startCamera();
+        placeholderImage = new Image(getClass().getResource("/br/com/catolicapb/facerecoptm/Images/cam.jpg").toExternalForm());
+        imageView.setImage(placeholderImage);
         captureAndRecognizeButton.setOnAction(event -> toggleRecognition());
         registerButton.setOnAction(event -> registerNewUser());
+        startStopCameraButton.setOnAction(event -> toggleCamera());
     }
 
     private void toggleRecognition() {
         if (isRecognitionActive) {
-            isRecognitionActive = false;
-            captureAndRecognizeButton.setText("Iniciar Reconhecimento");
-            lblLed.setFill(Color.GRAY);
-            setTargetColor(Color.GRAY);
-            updateLedColor();
-            lblLed.setVisible(false);
-            ConnectionToRaspberry.sendLedCommand(0, 0, 0);
+            stopRecognition();
         } else {
-            faceRecognizer.loadModelAsync().thenRun(() -> {
-                Platform.runLater(() -> {
-                    if (checkForTrainingImages()) {
-                        // Carregue os embeddings conhecidos apenas se não estiverem carregados
-                        if (faceRecognizer.hasKnownEmbeddings()) {
-                            logArea.appendText("Embeddings conhecidos já carregados.\n");
-                        } else {
-                            trainModel();
-                        }
-                    } else {
-                        logArea.appendText("Nenhum modelo disponível.\n");
+            startRecognition();
+        }
+    }
+
+    private void startRecognition() {
+        faceRecognizer.loadModelAsync().thenRun(() -> {
+            Platform.runLater(() -> {
+                if (checkForTrainingImages()) {
+                    if (!faceRecognizer.hasKnownEmbeddings()) {
+                        trainModel();
                     }
                     isRecognitionActive = true;
                     captureAndRecognizeButton.setText("Parar Reconhecimento");
                     lblLed.setVisible(true);
-                });
+                } else {
+                    logArea.appendText("Nenhum modelo disponível.\n");
+                }
             });
-        }
+        });
     }
 
+    private void stopRecognition() {
+        isRecognitionActive = false;
+        captureAndRecognizeButton.setText("Iniciar Reconhecimento");
+        lblLed.setFill(Color.GRAY);
+        setTargetColor(Color.GRAY);
+        updateLedColor();
+        lblLed.setVisible(false);
+        ConnectionToRaspberry.sendLedCommand(0, 0, 0);
+    }
 
     private boolean checkForTrainingImages() {
         return faceRecognizer.hasKnownEmbeddings();
     }
 
     private void trainModel() {
-        faceRecognizer.loadModelAsync().thenRun(() -> {
-            logArea.appendText("Modelo treinado com sucesso.\n");
-        });
+        faceRecognizer.loadModelAsync().thenRun(() -> logArea.appendText("Modelo treinado com sucesso.\n"));
+    }
+
+    private void toggleCamera() {
+        if (isCameraActive.get()) {
+            stopCamera();
+        } else {
+            startCamera();
+        }
     }
 
     private void startCamera() {
-        ExecutorService executor = Executors.newSingleThreadExecutor();
+        isCameraActive.set(true);
+        startStopCameraButton.setText("Parar Camera");
         executor.submit(() -> {
-            while (!Thread.currentThread().isInterrupted()) {
+            while (isCameraActive.get()) {
                 long currentTime = System.currentTimeMillis();
                 if (currentTime - lastFrameTime >= 50) {
                     captureAndProcessFrame();
@@ -112,6 +131,12 @@ public class MainController {
                 }
             }
         });
+    }
+
+    private void stopCamera() {
+        isCameraActive.set(false);
+        startStopCameraButton.setText("Iniciar Camera");
+        Platform.runLater(() -> imageView.setImage(placeholderImage));
     }
 
     private void captureAndProcessFrame() {
@@ -138,11 +163,7 @@ public class MainController {
             }
         }
         if (!recognized) {
-            if (facesArray.length > 0) {
-                setTargetColor(Color.RED);
-            } else {
-                setTargetColor(Color.GRAY);
-            }
+            setTargetColor(facesArray.length > 0 ? Color.RED : Color.GRAY);
         }
         updateLedColor();
         displayFrame(frame);
@@ -179,11 +200,11 @@ public class MainController {
 
     private void sendLedCommand(Color color) {
         if (color.equals(Color.GRAY)) {
-            ConnectionToRaspberry.sendLedCommand(0, 1, 0);
-        } else if (color.equals(Color.GREEN)) {
-            ConnectionToRaspberry.sendLedCommand(1, 0, 0);
-        } else if (color.equals(Color.RED)) {
             ConnectionToRaspberry.sendLedCommand(0, 0, 1);
+        } else if (color.equals(Color.GREEN)) {
+            ConnectionToRaspberry.sendLedCommand(0, 1, 0);
+        } else if (color.equals(Color.RED)) {
+            ConnectionToRaspberry.sendLedCommand(1, 0, 0);
         }
     }
 
@@ -199,7 +220,7 @@ public class MainController {
         dialog.setHeaderText("Insira o nome da pessoa:");
         dialog.setContentText("Nome:");
         Optional<String> result = dialog.showAndWait();
-        result.ifPresent(name -> captureImagesForTraining(name));
+        result.ifPresent(this::captureImagesForTraining);
     }
 
     private void captureImagesForTraining(String name) {

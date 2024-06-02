@@ -35,7 +35,7 @@ public class FaceRecognizer {
     public CompletableFuture<Void> loadModelAsync() {
         return CompletableFuture.runAsync(() -> {
             try {
-                byte[] graphDef = Files.readAllBytes(Paths.get("src/main/resources/br/com/catolicapb/facerecoptm/20180408-102900.pb"));
+                byte[] graphDef = Files.readAllBytes(Paths.get("src/main/resources/br/com/catolicapb/facerecoptm/TrainingModels/20180408-102900.pb"));
                 graph = new Graph();
                 graph.importGraphDef(graphDef);
                 session = new Session(graph);
