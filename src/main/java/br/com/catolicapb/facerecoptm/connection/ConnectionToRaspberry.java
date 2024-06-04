@@ -8,7 +8,7 @@ import java.util.concurrent.Executors;
 
 public class ConnectionToRaspberry {
     private static final ExecutorService executor = Executors.newSingleThreadExecutor();
-    private static final boolean isRaspOn = false; //se for executar o código com o rasp altere para true
+    private static final boolean isRaspOn = true; //se for executar o código com o rasp altere para true
 
     public static void sendHttpRequest(String command) {
         if (isRaspOn) {
@@ -23,7 +23,7 @@ public class ConnectionToRaspberry {
                         os.flush();
                     }
                     int responseCode = connection.getResponseCode();
-                    System.out.println("Response Code: " + responseCode);
+                    //System.out.println("Response Code: " + responseCode);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -31,7 +31,7 @@ public class ConnectionToRaspberry {
         }
     }
 
-    public static void sendLedCommand(int r, int g, int b) {
-        sendHttpRequest(r + "," + g + "," + b);
+    public static void sendLedCommand(String command) {
+        sendHttpRequest(command);
     }
 }

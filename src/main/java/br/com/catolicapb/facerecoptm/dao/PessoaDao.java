@@ -36,20 +36,45 @@ public class PessoaDao {
         return listData;
     }
 
-    public static void addPessoaData(Pessoa pessoa) {
+    public static int getNextPessoaID() {
+        String sql = "SELECT AUTO_INCREMENT FROM information_schema.TABLES WHERE TABLE_SCHEMA = 'facerecognition' AND TABLE_NAME = 'pessoa'";
+        try (Connection connection = ConnectionToMySQL.getConnection();
+             PreparedStatement pstmt = connection.prepareStatement(sql);
+             ResultSet result = pstmt.executeQuery()) {
+
+            if (result.next()) {
+                return result.getInt("AUTO_INCREMENT");
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return -1; // Retorna -1 em caso de erro
+    }
+
+    public static int addPessoaData(Pessoa pessoa) {
         String sql = "INSERT INTO pessoa (name, cpf, turma, isActive, registerDate) VALUES (?, ?, ?, ?, ?)";
 
         try (Connection connection = ConnectionToMySQL.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+             PreparedStatement pstmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             pstmt.setString(1, pessoa.getNome());
             pstmt.setString(2, pessoa.getCpf());
             pstmt.setString(3, pessoa.getTurma());
             pstmt.setBoolean(4, pessoa.getIsActive());
             pstmt.setTimestamp(5, getCurrentTimestamp());
-            pstmt.execute();
+            pstmt.executeUpdate();
+
+            // Obter o ID gerado automaticamente
+            try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    return generatedKeys.getInt(1);
+                } else {
+                    throw new SQLException("Falha ao obter o ID gerado.");
+                }
+            }
         } catch (SQLException ex) {
             ex.printStackTrace();
+            return -1;
         }
     }
 
@@ -103,5 +128,27 @@ public class PessoaDao {
         }
 
         return total;
+    }
+
+    public static Pessoa getPessoaById(int id) {
+        String sql = "SELECT * FROM pessoa WHERE id = ?";
+        try (Connection connection = ConnectionToMySQL.getConnection();
+             PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setInt(1, id);
+            ResultSet result = pstmt.executeQuery();
+            if (result.next()) {
+                return new Pessoa(
+                        result.getInt("id"),
+                        result.getString("name"),
+                        result.getString("cpf"),
+                        result.getString("turma"),
+                        result.getDate("registerDate"),
+                        result.getBoolean("isActive")
+                );
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return null;
     }
 }

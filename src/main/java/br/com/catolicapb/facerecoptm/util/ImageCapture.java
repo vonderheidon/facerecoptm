@@ -54,4 +54,9 @@ public class ImageCapture {
     public void release() {
         capture.release();
     }
+
+    public boolean isOpened() {
+        return capture.isOpened();
+    }
+
 }

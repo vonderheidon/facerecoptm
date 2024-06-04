@@ -11,19 +11,19 @@ import java.util.Map;
 
 public class EmbeddingDao {
 
-    public static void saveEmbedding(String name, float[] embedding) throws SQLException {
-        String sql = "INSERT INTO known_faces (name, embedding) VALUES (?, ?)";
+    public static void saveEmbedding(int pessoaId, float[] embedding) throws SQLException {
+        String sql = "INSERT INTO known_faces (pessoa_id, embedding) VALUES (?, ?)";
 
         try (Connection conn = ConnectionToMySQL.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, name);
+            pstmt.setInt(1, pessoaId);
             pstmt.setBytes(2, toByteArray(embedding));
             pstmt.executeUpdate();
         }
     }
 
     public static ResultSet getEmbeddings(Connection conn) throws SQLException {
-        String sql = "SELECT name, embedding FROM known_faces";
+        String sql = "SELECT pessoa_id, embedding FROM known_faces";
         PreparedStatement pstmt = conn.prepareStatement(sql);
         return pstmt.executeQuery();
     }
@@ -54,14 +54,14 @@ public class EmbeddingDao {
         return floatArray;
     }
 
-    public static Map<String, float[]> loadKnownEmbeddings() {
-        Map<String, float[]> knownEmbeddings = new HashMap<>();
+    public static Map<Integer, float[]> loadKnownEmbeddings() {
+        Map<Integer, float[]> knownEmbeddings = new HashMap<>();
         try (Connection conn = ConnectionToMySQL.getConnection();
              ResultSet rs = getEmbeddings(conn)) {
             while (rs.next()) {
-                String name = rs.getString("name");
+                int pessoaId = rs.getInt("pessoa_id");
                 float[] embedding = toFloatArray(rs.getBytes("embedding"));
-                knownEmbeddings.put(name, embedding);
+                knownEmbeddings.put(pessoaId, embedding);
             }
         } catch (Exception e) {
             e.printStackTrace();

@@ -1,6 +1,7 @@
 package br.com.catolicapb.facerecoptm.util;
 
 import br.com.catolicapb.facerecoptm.dao.EmbeddingDao;
+import br.com.catolicapb.facerecoptm.dao.PessoaDao;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Size;
@@ -21,7 +22,7 @@ import java.util.concurrent.CompletableFuture;
 public class FaceRecognizer {
     private Graph graph;
     private Session session;
-    private Map<String, float[]> knownEmbeddings;
+    private Map<Integer, float[]> knownEmbeddings;
     private double threshold = 0.8;
 
     public FaceRecognizer() {
@@ -74,28 +75,28 @@ public class FaceRecognizer {
         return embeddingArray[0];
     }
 
-    public void addKnownEmbedding(String label, Mat image) {
+    public void addKnownEmbedding(int pessoaId, Mat image) {
         float[] embedding = getEmbedding(image);
         try {
-            EmbeddingDao.saveEmbedding(label, embedding);
-            knownEmbeddings.put(label, embedding);
+            EmbeddingDao.saveEmbedding(pessoaId, embedding);
+            knownEmbeddings.put(pessoaId, embedding);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public String recognize(Mat image) {
+    public int recognizeAndGetId(Mat image) {
         float[] embedding = getEmbedding(image);
-        String recognizedLabel = "Desconhecido";
+        int recognizedId = -1;
         double minDistance = Double.MAX_VALUE;
-        for (Map.Entry<String, float[]> entry : knownEmbeddings.entrySet()) {
+        for (Map.Entry<Integer, float[]> entry : knownEmbeddings.entrySet()) {
             double distance = calculateDistance(embedding, entry.getValue());
             if (distance < minDistance && distance < threshold) {
                 minDistance = distance;
-                recognizedLabel = entry.getKey();
+                recognizedId = entry.getKey();
             }
         }
-        return recognizedLabel;
+        return recognizedId;
     }
 
     private double calculateDistance(float[] emb1, float[] emb2) {
