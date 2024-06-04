@@ -467,11 +467,19 @@ public class SGPViewController {
             String label;
             if (personId != -1) {
                 //System.out.println("Pessoa reconhecida: " + personId);
-                setTargetColor(Color.GREEN);
-                faceRecognized = true;
-                recognizedPersonId = personId;
                 Pessoa pessoa = PessoaDao.getPessoaById(personId);
-                label = pessoa != null ? pessoa.getNome() : "Desconhecido";
+                if (pessoa.getIsActive()) {
+                    setTargetColor(Color.GREEN);
+                    faceRecognized = true;
+                    recognizedPersonId = personId;
+                    label = pessoa.getNome();
+                } else {
+                    //System.out.println("Pessoa não reconhecida");
+                    setTargetColor(Color.RED);
+                    faceRecognized = false;
+                    recognizedPersonId = null;
+                    label = "Desconhecido";
+                }
             } else {
                 //System.out.println("Pessoa não reconhecida");
                 setTargetColor(Color.RED);

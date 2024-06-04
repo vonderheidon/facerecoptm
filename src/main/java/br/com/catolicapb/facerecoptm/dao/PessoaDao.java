@@ -36,21 +36,6 @@ public class PessoaDao {
         return listData;
     }
 
-    public static int getNextPessoaID() {
-        String sql = "SELECT AUTO_INCREMENT FROM information_schema.TABLES WHERE TABLE_SCHEMA = 'facerecognition' AND TABLE_NAME = 'pessoa'";
-        try (Connection connection = ConnectionToMySQL.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql);
-             ResultSet result = pstmt.executeQuery()) {
-
-            if (result.next()) {
-                return result.getInt("AUTO_INCREMENT");
-            }
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-        }
-        return -1; // Retorna -1 em caso de erro
-    }
-
     public static int addPessoaData(Pessoa pessoa) {
         String sql = "INSERT INTO pessoa (name, cpf, turma, isActive, registerDate) VALUES (?, ?, ?, ?, ?)";
 

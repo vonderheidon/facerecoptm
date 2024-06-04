@@ -8,7 +8,7 @@ import java.util.concurrent.Executors;
 
 public class ConnectionToRaspberry {
     private static final ExecutorService executor = Executors.newSingleThreadExecutor();
-    private static final boolean isRaspOn = true; //se for executar o código com o rasp altere para true
+    private static final boolean isRaspOn = false; //se for executar o código com o rasp altere para true
 
     public static void sendHttpRequest(String command) {
         if (isRaspOn) {
