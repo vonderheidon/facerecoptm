@@ -8,7 +8,7 @@
 
 <a href="https://ibb.co/cNd2T16"><img src="https://i.ibb.co/cNd2T16/1.png" alt="1" border="0"></a> <a href="https://ibb.co/Q9zHgXL"><img src="https://i.ibb.co/Q9zHgXL/2.png" alt="2" border="0"></a> <a href="https://ibb.co/dJRwDvS"><img src="https://i.ibb.co/dJRwDvS/3.png" alt="3" border="0"></a>
 
-> O projeto facerecoptm busca fazer controle de acesse por meio de reconhecimento facial, utilizando do opencv e o raspberry pi, ele aciona um led dependendo da verificação facial, o que pode ser integrado em diversos cenários reais como catracas em escolas.
+> O projeto facerecoptm busca fazer controle de acesso por meio de reconhecimento facial, utilizando do opencv e o raspberry pi, ele aciona um led dependendo da verificação facial, o que pode ser integrado em diversos cenários reais como catracas em escolas.
 ### Ajustes e melhorias
 
 O projeto ainda está em desenvolvimento e as próximas atualizações serão voltadas nas seguintes tarefas:
