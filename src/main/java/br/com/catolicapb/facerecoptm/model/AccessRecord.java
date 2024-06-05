@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 public class AccessRecord {
     private int id;
     private int pessoaId;
+    private String nome;
     private LocalDateTime entryTime;
     private LocalDateTime exitTime;
 }

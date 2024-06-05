@@ -40,7 +40,7 @@ public class AccessRecordDao {
 
     public static ObservableList<AccessRecord> getAccessRecordsByDate(LocalDate date) {
         ObservableList<AccessRecord> records = FXCollections.observableArrayList();
-        String sql = "SELECT * FROM access_records WHERE DATE(entry_time) = ?";
+        String sql = "SELECT p.id, ar.pessoa_id, ar.entry_time, ar.exit_time, p.name FROM access_records ar JOIN pessoa p ON ar.pessoa_id = p.id WHERE DATE(ar.entry_time) = ?";
         try (Connection conn = ConnectionToMySQL.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, date.toString());
@@ -49,6 +49,7 @@ public class AccessRecordDao {
                 AccessRecord record = new AccessRecord(
                         rs.getInt("id"),
                         rs.getInt("pessoa_id"),
+                        rs.getString("name"),
                         rs.getTimestamp("entry_time").toLocalDateTime(),
                         rs.getTimestamp("exit_time") != null ? rs.getTimestamp("exit_time").toLocalDateTime() : null
                 );
@@ -60,9 +61,9 @@ public class AccessRecordDao {
         return records;
     }
 
+
     public static boolean hasEntryForToday(int pessoaId) {
         String sql = "SELECT COUNT(*) FROM access_records WHERE pessoa_id = ? AND DATE(entry_time) = ?";
-
         try (Connection conn = ConnectionToMySQL.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, pessoaId);
@@ -79,7 +80,6 @@ public class AccessRecordDao {
 
     public static boolean hasExitForToday(int pessoaId) {
         String sql = "SELECT COUNT(*) FROM access_records WHERE pessoa_id = ? AND DATE(entry_time) = ? AND exit_time IS NOT NULL";
-
         try (Connection conn = ConnectionToMySQL.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, pessoaId);

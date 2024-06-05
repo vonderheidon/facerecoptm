@@ -31,6 +31,7 @@ import java.sql.Date;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -62,6 +63,8 @@ public class SGPViewController {
     private TableColumn<AccessRecord, LocalDateTime> entryTimeColumn;
     @FXML
     private TableColumn<AccessRecord, LocalDateTime> exitTimeColumn;
+    @FXML
+    private TableColumn<AccessRecord, String> nameColumnAR;
     @FXML
     private LineChart<String, Number> homeChart;
     @FXML
@@ -119,9 +122,8 @@ public class SGPViewController {
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private AnchorPane currentAnchor;
     private Button currentButton;
-    private LocalDateTime lastEntryTime = null;
-    private LocalDateTime lastExitTime = null;
-
+    private LocalDateTime lastRecordedEntry = null;
+    private LocalDateTime lastRecordedExit = null;
     private Integer recognizedPersonId;
     private long lastRecognitionChangeTime;
     private long lastVisibilityChangeTime;
@@ -169,15 +171,45 @@ public class SGPViewController {
         pessoaTv.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> updateButtonStates());
         loadHomeChart();
         idColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
-        // Listener para o DatePicker
+        nameColumnAR.setCellValueFactory(new PropertyValueFactory<>("nome"));
+        entryTimeColumn.setCellValueFactory(new PropertyValueFactory<>("entryTime"));
+        exitTimeColumn.setCellValueFactory(new PropertyValueFactory<>("exitTime"));
+        configureDateTimeColumns();
         datePicker.valueProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
                 loadAccessRecords(newValue);
             }
         });
-
-        // Carregar registros da data atual na inicialização
+        datePicker.setValue(LocalDate.now());
         loadAccessRecords(LocalDate.now());
+    }
+    private void configureDateTimeColumns() {
+        entryTimeColumn.setCellFactory(column -> {
+            return new TableCell<AccessRecord, LocalDateTime>() {
+                @Override
+                protected void updateItem(LocalDateTime item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (item == null || empty) {
+                        setText(null);
+                    } else {
+                        setText(formatDateTime(item));
+                    }
+                }
+            };
+        });
+        exitTimeColumn.setCellFactory(column -> {
+            return new TableCell<AccessRecord, LocalDateTime>() {
+                @Override
+                protected void updateItem(LocalDateTime item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (item == null || empty) {
+                        setText(null);
+                    } else {
+                        setText(formatDateTime(item));
+                    }
+                }
+            };
+        });
     }
 
     @FXML
@@ -265,6 +297,9 @@ public class SGPViewController {
     }
 
     private void loadAccessRecords(LocalDate date) {
+        if (date == null) {
+            return;
+        }
         ObservableList<AccessRecord> records = AccessRecordDao.getAccessRecordsByDate(date);
         accessRecordsTable.setItems(records);
     }
@@ -343,6 +378,9 @@ public class SGPViewController {
         return sdf.format(registerDate);
     }
 
+    private String formatDateTime(LocalDateTime dateTime) {
+        return dateTime.format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+    }
 
     private void addPessoa() {
         if (nameTf.getText().isEmpty() || CPFTf.getText().isEmpty() || ClassTf.getText().isEmpty()) {
@@ -662,12 +700,24 @@ public class SGPViewController {
 
     private void handleAccessRecords(int pessoaId) {
         LocalDateTime now = LocalDateTime.now();
+        boolean recordsUpdated = false;
+
         if (!AccessRecordDao.hasEntryForToday(pessoaId)) {
             AccessRecordDao.recordEntry(pessoaId, now);
-            lastEntryTime = now;
-        } else if (!AccessRecordDao.hasExitForToday(pessoaId) && (lastExitTime == null || lastExitTime.plusMinutes(1).isBefore(now))) {
+            lastRecordedEntry = now;
+            recordsUpdated = true;
+        } else if (lastRecordedEntry != null && lastRecordedEntry.plusMinutes(1).isBefore(now) &&
+                !AccessRecordDao.hasExitForToday(pessoaId)) {
             AccessRecordDao.recordExit(pessoaId, now);
-            lastExitTime = now;
+            lastRecordedExit = now;
+            recordsUpdated = true;
+        }
+
+        if (recordsUpdated) {
+            LocalDate selectedDate = datePicker.getValue();
+            if (selectedDate != null) {
+                Platform.runLater(() -> loadAccessRecords(selectedDate));
+            }
         }
     }
 
