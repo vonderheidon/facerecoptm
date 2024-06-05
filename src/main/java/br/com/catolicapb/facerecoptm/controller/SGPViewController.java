@@ -25,7 +25,8 @@ import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
-import java.io.ByteArrayInputStream;
+import java.sql.Date;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -96,10 +97,6 @@ public class SGPViewController {
     private Button homeBtn;
     @FXML
     private Button updateBtn;
-    @FXML
-    private Button addBtn;
-    @FXML
-    private Button clearBtn;
     @FXML
     private Button deleteBtn;
     @FXML
@@ -271,10 +268,13 @@ public class SGPViewController {
     }
 
     private void loadTemposDeRegistro() {
-        Map<LocalDate, Integer> data = PessoaDao.getTemposDeRegistro();
+        Map<LocalDate, Integer> temposDeRegistro = PessoaDao.getTemposDeRegistro();
         XYChart.Series<String, Number> series = new XYChart.Series<>();
-        series.setName("Registros por Dia");
-        data.forEach((date, count) -> series.getData().add(new XYChart.Data<>(date.toString(), count)));
+        series.setName("Tempos de Registro");
+        for (Map.Entry<LocalDate, Integer> entry : temposDeRegistro.entrySet()) {
+            var date = formatDate(Date.valueOf(entry.getKey()));
+            series.getData().add(new XYChart.Data<>(date, entry.getValue()));
+        }
         homeChart.getData().add(series);
     }
 
@@ -290,7 +290,7 @@ public class SGPViewController {
         CPFTf.setText(pessoa.getCpf());
         ClassTf.setText(pessoa.getTurma());
         isActiveCheckBox.setSelected(pessoa.getIsActive());
-        RegisterDateLbl.setText(pessoa.getRegisterDate().toString());
+        RegisterDateLbl.setText(formatDate(pessoa.getRegisterDate()));
         updateButtonStates();
     }
 
@@ -302,10 +302,16 @@ public class SGPViewController {
             CPFTf.setText(pessoa.getCpf());
             ClassTf.setText(pessoa.getTurma());
             isActiveCheckBox.setSelected(pessoa.getIsActive());
-            RegisterDateLbl.setText(pessoa.getRegisterDate().toString());
+            RegisterDateLbl.setText(formatDate(pessoa.getRegisterDate()));
             updateButtonStates();
         }
     }
+
+    private String formatDate(Date registerDate) {
+        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
+        return sdf.format(registerDate);
+    }
+
 
     private void addPessoa() {
         if (nameTf.getText().isEmpty() || CPFTf.getText().isEmpty() || ClassTf.getText().isEmpty()) {
@@ -609,6 +615,7 @@ public class SGPViewController {
         NameLbl.setText(pessoa.getNome());
         CPFLbl.setText(pessoa.getCpf());
         ClassLbl.setText(pessoa.getTurma());
+        RegisterDateLbl.setText(formatDate(pessoa.getRegisterDate()));
         identAnchor.setVisible(true);
         registerAnchor.setVisible(false);
     }

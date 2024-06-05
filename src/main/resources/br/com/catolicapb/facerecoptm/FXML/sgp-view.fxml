@@ -140,7 +140,7 @@
                                  </children>
                               </AnchorPane>
                            </children></AnchorPane>
-                        <AnchorPane fx:id="managementAnchor" layoutX="70.0" layoutY="142.0" prefHeight="555.0" prefWidth="577.0" visible="false" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="323.0" AnchorPane.topAnchor="0.0">
+                        <AnchorPane fx:id="managementAnchor" layoutX="70.0" layoutY="142.0" prefHeight="555.0" prefWidth="577.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="323.0" AnchorPane.topAnchor="0.0">
                            <children>
                               <AnchorPane layoutX="13.0" layoutY="13.0" prefHeight="530.0" prefWidth="550.0" stylesheets="@../CSS/Style.css">
                                  <children>
@@ -165,7 +165,7 @@
                                     <TextField fx:id="CPFTf" layoutX="360.0" layoutY="357.0" styleClass="textfield" stylesheets="@../CSS/Style.css" />
                                     <TextField fx:id="ClassTf" layoutX="360.0" layoutY="403.0" styleClass="textfield" stylesheets="@../CSS/Style.css" />
                                     <CheckBox fx:id="isActiveCheckBox" layoutX="113.0" layoutY="407.0" mnemonicParsing="false" selected="true" />
-                                    <Button fx:id="addBtn" layoutX="435.0" layoutY="476.0" mnemonicParsing="false" onAction="#addBtnAction" prefHeight="40.0" prefWidth="90.0" stylesheets="@../CSS/Style.css" text="Adicionar">
+                                    <Button layoutX="435.0" layoutY="476.0" mnemonicParsing="false" onAction="#addBtnAction" prefHeight="40.0" prefWidth="90.0" stylesheets="@../CSS/Style.css" text="Adicionar">
                                        <font>
                                           <Font name="Tahoma" size="14.0" />
                                        </font>
@@ -183,7 +183,7 @@
                                           <String fx:value="shadow" />
                                        </styleClass>
                                     </Button>
-                                    <Button fx:id="clearBtn" layoutX="162.0" layoutY="476.0" mnemonicParsing="false" onAction="#clearBtnAction" prefHeight="40.0" prefWidth="90.0" stylesheets="@../CSS/Style.css" text="Limpar">
+                                    <Button layoutX="162.0" layoutY="476.0" mnemonicParsing="false" onAction="#clearBtnAction" prefHeight="40.0" prefWidth="90.0" stylesheets="@../CSS/Style.css" text="Limpar">
                                        <font>
                                           <Font name="Tahoma" size="14.0" />
                                        </font>
@@ -295,7 +295,7 @@
                                           <Circle fx:id="lblLed" fill="#0004ff" layoutX="288.0" layoutY="22.0" radius="11.0" stroke="BLACK" strokeType="INSIDE" styleClass="shadow" />
                                        </children>
                                     </AnchorPane>
-                                    <AnchorPane fx:id="identAnchor" layoutX="8.0" layoutY="321.0" prefHeight="200.0" prefWidth="295.0" visible="false">
+                                    <AnchorPane fx:id="identAnchor" layoutX="8.0" layoutY="321.0" prefHeight="200.0" prefWidth="295.0">
                                        <children>
                                           <AnchorPane layoutX="30.0" layoutY="105.0" prefHeight="35.0" prefWidth="235.0" stylesheets="@../CSS/Style.css">
                                              <children>
