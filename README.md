@@ -1,6 +1,7 @@
 # Facerecoptm
 
-![GitHub repo size](https://img.shields.io/github/repo-size/iuricode/README-template?style=for-the-badge)
+![GitHub repo size](https://img.badgesize.io/:github.com/vonderheidon/facerecoptm[.svg|png|jpg][?compression=gzip|brotli][&label=string][&max=string][&softmax=string]
+)
 ![GitHub language count](https://img.shields.io/github/languages/count/iuricode/README-template?style=for-the-badge)
 ![GitHub forks](https://img.shields.io/github/forks/iuricode/README-template?style=for-the-badge)
 ![Bitbucket open issues](https://img.shields.io/bitbucket/issues/iuricode/README-template?style=for-the-badge)
