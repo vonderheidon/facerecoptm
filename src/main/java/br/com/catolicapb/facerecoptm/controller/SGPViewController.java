@@ -1,7 +1,9 @@
 package br.com.catolicapb.facerecoptm.controller;
 
 import br.com.catolicapb.facerecoptm.connection.ConnectionToRaspberry;
+import br.com.catolicapb.facerecoptm.dao.AccessRecordDao;
 import br.com.catolicapb.facerecoptm.dao.PessoaDao;
+import br.com.catolicapb.facerecoptm.model.AccessRecord;
 import br.com.catolicapb.facerecoptm.model.Pessoa;
 import br.com.catolicapb.facerecoptm.util.FaceRecognizer;
 import br.com.catolicapb.facerecoptm.util.ImageCapture;
@@ -28,6 +30,7 @@ import org.opencv.imgproc.Imgproc;
 import java.sql.Date;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -38,15 +41,11 @@ public class SGPViewController {
     @FXML
     private Circle lblLed;
     @FXML
-    private Button registerButton;
-    @FXML
-    private Button captureAndRecognizeButton;
-    @FXML
-    private Button startStopCameraButton;
-    @FXML
     private ImageView camImgView;
     @FXML
     private CheckBox isActiveCheckBox;
+    @FXML
+    private DatePicker datePicker;
     @FXML
     private TableView<Pessoa> pessoaTv;
     @FXML
@@ -56,19 +55,27 @@ public class SGPViewController {
     @FXML
     private TableColumn<Pessoa, String> CPFColumn;
     @FXML
+    private TableView<AccessRecord> accessRecordsTable;
+    @FXML
+    private TableColumn<AccessRecord, Integer> idColumn;
+    @FXML
+    private TableColumn<AccessRecord, LocalDateTime> entryTimeColumn;
+    @FXML
+    private TableColumn<AccessRecord, LocalDateTime> exitTimeColumn;
+    @FXML
+    private LineChart<String, Number> homeChart;
+    @FXML
     private TextField CPFTf;
     @FXML
     private TextField nameTf;
     @FXML
-    private Label IDLbl;
-    @FXML
     private TextField ClassTf;
-    @FXML
-    private Label RegisterDateLbl;
     @FXML
     private TextField searchTf;
     @FXML
-    private LineChart<String, Number> homeChart;
+    private Label IDLbl;
+    @FXML
+    private Label RegisterDateLbl;
     @FXML
     private Label homeTotalLbl;
     @FXML
@@ -90,6 +97,12 @@ public class SGPViewController {
     @FXML
     private AnchorPane registerAnchor;
     @FXML
+    private Button registerButton;
+    @FXML
+    private Button captureAndRecognizeButton;
+    @FXML
+    private Button startStopCameraButton;
+    @FXML
     private Button reportBtn;
     @FXML
     private Button managementBtn;
@@ -101,23 +114,26 @@ public class SGPViewController {
     private Button deleteBtn;
     @FXML
     private Button manageBtn;
-    private AnchorPane currentAnchor;
-    private Button currentButton;
     private final FaceRecognizer faceRecognizer = new FaceRecognizer();
     private ImageCapture imageCapture = new ImageCapture();
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private AnchorPane currentAnchor;
+    private Button currentButton;
+    private LocalDateTime lastEntryTime = null;
+    private LocalDateTime lastExitTime = null;
+
+    private Integer recognizedPersonId;
     private long lastRecognitionChangeTime;
+    private long lastVisibilityChangeTime;
+    private long lastFrameTime;
+    private Color targetColor = Color.GRAY;
+    private Color lastSentColor = Color.GRAY;
     private boolean faceRecognized = false;
     private boolean faceDetected = false;
-    private long lastVisibilityChangeTime;
-    private Color targetColor = Color.GRAY;
-    private long lastFrameTime;
-    private Color lastSentColor = Color.GRAY;
     private boolean isRecognitionActive = false;
     private AtomicBoolean isCameraActive = new AtomicBoolean(false);
     private volatile boolean stopRequested = false;
     private Image placeholderImage;
-    private Integer recognizedPersonId;
 
     @FXML
     protected void initialize() {
@@ -152,6 +168,16 @@ public class SGPViewController {
         deleteBtn.setDisable(true);
         pessoaTv.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> updateButtonStates());
         loadHomeChart();
+        idColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
+        // Listener para o DatePicker
+        datePicker.valueProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                loadAccessRecords(newValue);
+            }
+        });
+
+        // Carregar registros da data atual na inicialização
+        loadAccessRecords(LocalDate.now());
     }
 
     @FXML
@@ -236,6 +262,11 @@ public class SGPViewController {
         homeTotalLbl.setText(String.valueOf(PessoaDao.getTotalPessoas()));
         pessoaTv.setPlaceholder(new Label("Nenhum termo de pesquisa inserido."));
         loadHomeChart();
+    }
+
+    private void loadAccessRecords(LocalDate date) {
+        ObservableList<AccessRecord> records = AccessRecordDao.getAccessRecordsByDate(date);
+        accessRecordsTable.setItems(records);
     }
 
     private void updateButtonStates() {
@@ -596,6 +627,7 @@ public class SGPViewController {
                         Pessoa pessoa = PessoaDao.getPessoaById(recognizedPersonId);
                         if (pessoa != null) {
                             updateRecognizedPersonDetails(pessoa);
+                            handleAccessRecords(pessoa.getId());
                         } else {
                             updateUnrecognizedPersonDetails();
                         }
@@ -626,6 +658,17 @@ public class SGPViewController {
         ClassLbl.setText("N/A");
         identAnchor.setVisible(false);
         registerAnchor.setVisible(true);
+    }
+
+    private void handleAccessRecords(int pessoaId) {
+        LocalDateTime now = LocalDateTime.now();
+        if (!AccessRecordDao.hasEntryForToday(pessoaId)) {
+            AccessRecordDao.recordEntry(pessoaId, now);
+            lastEntryTime = now;
+        } else if (!AccessRecordDao.hasExitForToday(pessoaId) && (lastExitTime == null || lastExitTime.plusMinutes(1).isBefore(now))) {
+            AccessRecordDao.recordExit(pessoaId, now);
+            lastExitTime = now;
+        }
     }
 
     private void displayFrame(Mat frame) {
