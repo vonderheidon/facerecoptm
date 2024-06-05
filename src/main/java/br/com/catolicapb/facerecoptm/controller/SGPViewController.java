@@ -314,7 +314,6 @@ public class SGPViewController {
         homeChart.getData().clear();
         loadDistribuicaoPessoasPorTurma();
         loadPessoasAtivasInativas();
-        loadTemposDeRegistro();
     }
 
     private void loadDistribuicaoPessoasPorTurma() {
@@ -330,17 +329,6 @@ public class SGPViewController {
         XYChart.Series<String, Number> series = new XYChart.Series<>();
         series.setName("Ativos vs Inativos");
         data.forEach((status, count) -> series.getData().add(new XYChart.Data<>(status, count)));
-        homeChart.getData().add(series);
-    }
-
-    private void loadTemposDeRegistro() {
-        Map<LocalDate, Integer> temposDeRegistro = PessoaDao.getTemposDeRegistro();
-        XYChart.Series<String, Number> series = new XYChart.Series<>();
-        series.setName("Tempos de Registro");
-        for (Map.Entry<LocalDate, Integer> entry : temposDeRegistro.entrySet()) {
-            var date = formatDate(Date.valueOf(entry.getKey()));
-            series.getData().add(new XYChart.Data<>(date, entry.getValue()));
-        }
         homeChart.getData().add(series);
     }
 

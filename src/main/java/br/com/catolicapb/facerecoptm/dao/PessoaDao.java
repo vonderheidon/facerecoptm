@@ -157,19 +157,4 @@ public class PessoaDao {
         return statusCount;
     }
 
-    public static Map<LocalDate, Integer> getTemposDeRegistro() {
-        Map<LocalDate, Integer> registrosPorDia = new HashMap<>();
-        String sql = "SELECT DATE(registerDate) AS date, COUNT(*) AS count FROM pessoa GROUP BY DATE(registerDate)";
-        try (Connection connection = ConnectionToMySQL.getConnection();
-             PreparedStatement pstmt = connection.prepareStatement(sql);
-             ResultSet result = pstmt.executeQuery()) {
-            while (result.next()) {
-                registrosPorDia.put(result.getDate("date").toLocalDate(), result.getInt("count"));
-            }
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-        }
-        return registrosPorDia;
-    }
-
 }
