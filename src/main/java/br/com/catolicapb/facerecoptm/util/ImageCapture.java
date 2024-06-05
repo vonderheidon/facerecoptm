@@ -1,19 +1,18 @@
 package br.com.catolicapb.facerecoptm.util;
 
-import org.opencv.core.Core;
-import org.opencv.core.CvType;
-import org.opencv.core.Mat;
-import org.opencv.core.MatOfRect;
-import org.opencv.core.Rect;
-import org.opencv.core.Size;
+import javafx.scene.image.Image;
+import org.opencv.core.*;
+import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.objdetect.CascadeClassifier;
 import org.opencv.videoio.VideoCapture;
 import org.opencv.videoio.Videoio;
 
+import java.io.ByteArrayInputStream;
+
 public class ImageCapture {
-    private VideoCapture capture;
-    private CascadeClassifier faceDetector;
+    private static VideoCapture capture;
+    private static CascadeClassifier faceDetector;
 
     public ImageCapture() {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
@@ -23,7 +22,7 @@ public class ImageCapture {
         faceDetector = new CascadeClassifier("src/main/resources/br/com/catolicapb/facerecoptm/TrainingModels/haarcascade_frontalface_default.xml");
     }
 
-    public Mat captureImage() {
+    public static Mat captureImage() {
         Mat frame = new Mat();
         if (capture.isOpened()) {
             capture.read(frame);
@@ -32,7 +31,7 @@ public class ImageCapture {
         return frame;
     }
 
-    public Mat captureGrayscaleImage() {
+    public static Mat captureGrayscaleImage() {
         Mat frame = captureImage();
         Mat grayFrame = new Mat(frame.size(), CvType.CV_8UC1);
         Imgproc.cvtColor(frame, grayFrame, Imgproc.COLOR_BGR2GRAY);
@@ -40,7 +39,7 @@ public class ImageCapture {
         return grayFrame;
     }
 
-    public Rect[] detectFaces(Mat frame) {
+    public static Rect[] detectFaces(Mat frame) {
         MatOfRect faceDetections = new MatOfRect();
         //valores padrões
         //scaleFactor = 1.1
@@ -49,6 +48,31 @@ public class ImageCapture {
         //maxSize = 2x2
         faceDetector.detectMultiScale(frame, faceDetections, 1.1, 7, 0, new Size(50, 50), new Size());
         return faceDetections.toArray();
+    }
+
+    public static Image mat2Image(Mat frame) {
+        MatOfByte buffer = new MatOfByte();
+        Imgcodecs.imencode(".png", frame, buffer);
+        return new Image(new ByteArrayInputStream(buffer.toArray()));
+    }
+
+    public static void captureImagesForTraining(int pessoaId) {
+        int numImages = 7;
+        for (int i = 0; i < numImages; i++) {
+            Mat frame = captureGrayscaleImage();
+            Rect[] facesArray = detectFaces(frame);
+            if (facesArray.length == 1) {
+                Mat face = new Mat(frame, facesArray[0]);
+                FaceRecognizer.addKnownEmbedding(pessoaId, face);
+            } else {
+                i--;
+            }
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     public void release() {

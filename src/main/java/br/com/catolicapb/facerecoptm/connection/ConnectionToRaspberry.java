@@ -1,5 +1,7 @@
 package br.com.catolicapb.facerecoptm.connection;
 
+import javafx.scene.paint.Color;
+
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -29,6 +31,20 @@ public class ConnectionToRaspberry {
                 }
             });
         }
+    }
+
+    public static void sendLedCommand(Color color) {
+        String command = "";
+        if (color.equals(Color.GRAY)) {
+            command = "0,0,1";
+        } else if (color.equals(Color.GREEN)) {
+            command = "0,1,0";
+        } else if (color.equals(Color.RED)) {
+            command = "1,0,0";
+        } else {
+            command = "0,0,0";
+        }
+        sendLedCommand(command);
     }
 
     public static void sendLedCommand(String command) {

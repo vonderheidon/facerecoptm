@@ -6,8 +6,12 @@ import br.com.catolicapb.facerecoptm.model.Pessoa;
 import br.com.catolicapb.facerecoptm.util.FaceRecognizer;
 import br.com.catolicapb.facerecoptm.util.ImageCapture;
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.scene.chart.BarChart;
+import javafx.scene.Cursor;
+import javafx.scene.chart.LineChart;
+import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
@@ -17,13 +21,14 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
 import org.opencv.core.Mat;
-import org.opencv.core.MatOfByte;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
-import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
 import java.io.ByteArrayInputStream;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -62,7 +67,7 @@ public class SGPViewController {
     @FXML
     private TextField searchTf;
     @FXML
-    private BarChart<?, ?> homeChart;
+    private LineChart<String, Number> homeChart;
     @FXML
     private Label homeTotalLbl;
     @FXML
@@ -142,18 +147,26 @@ public class SGPViewController {
         });
         registerButton.setOnAction(event -> {
             showAnchor(managementAnchor, managementBtn);
+            updateButtonStates();
         });
         startStopCameraButton.setOnAction(event -> toggleCamera());
+        searchTf.textProperty().addListener((observable, oldValue, newValue) -> filterPessoaList(newValue));
+        updateBtn.setDisable(true);
+        deleteBtn.setDisable(true);
+        pessoaTv.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> updateButtonStates());
+        loadHomeChart();
     }
 
     @FXML
     void addBtnAction() {
         addPessoa();
+        updateButtonStates();
     }
 
     @FXML
     void clearBtnAction() {
         clearFields();
+        updateButtonStates();
     }
 
     @FXML
@@ -222,8 +235,47 @@ public class SGPViewController {
         nameColumn.setCellValueFactory(new PropertyValueFactory<>("nome"));
         CPFColumn.setCellValueFactory(new PropertyValueFactory<>("cpf"));
         var pessoaListData = PessoaDao.getPessoaListData();
-        pessoaTv.setItems(pessoaListData);
+        pessoaTv.setItems(FXCollections.observableArrayList(pessoaListData));
         homeTotalLbl.setText(String.valueOf(PessoaDao.getTotalPessoas()));
+        pessoaTv.setPlaceholder(new Label("Nenhum termo de pesquisa inserido."));
+        loadHomeChart();
+    }
+
+    private void updateButtonStates() {
+        boolean isPersonSelected = pessoaTv.getSelectionModel().getSelectedItem() != null || !IDLbl.getText().equals("-");
+        deleteBtn.setDisable(!isPersonSelected);
+        updateBtn.setDisable(!isPersonSelected);
+    }
+
+    private void loadHomeChart() {
+        homeChart.getData().clear();
+        loadDistribuicaoPessoasPorTurma();
+        loadPessoasAtivasInativas();
+        loadTemposDeRegistro();
+    }
+
+    private void loadDistribuicaoPessoasPorTurma() {
+        Map<String, Integer> data = PessoaDao.getPessoasPorTurma();
+        XYChart.Series<String, Number> series = new XYChart.Series<>();
+        series.setName("Pessoas por Turma");
+        data.forEach((turma, count) -> series.getData().add(new XYChart.Data<>(turma, count)));
+        homeChart.getData().add(series);
+    }
+
+    private void loadPessoasAtivasInativas() {
+        Map<String, Integer> data = PessoaDao.getPessoasAtivasInativas();
+        XYChart.Series<String, Number> series = new XYChart.Series<>();
+        series.setName("Ativos vs Inativos");
+        data.forEach((status, count) -> series.getData().add(new XYChart.Data<>(status, count)));
+        homeChart.getData().add(series);
+    }
+
+    private void loadTemposDeRegistro() {
+        Map<LocalDate, Integer> data = PessoaDao.getTemposDeRegistro();
+        XYChart.Series<String, Number> series = new XYChart.Series<>();
+        series.setName("Registros por Dia");
+        data.forEach((date, count) -> series.getData().add(new XYChart.Data<>(date.toString(), count)));
+        homeChart.getData().add(series);
     }
 
     @FXML
@@ -239,6 +291,7 @@ public class SGPViewController {
         ClassTf.setText(pessoa.getTurma());
         isActiveCheckBox.setSelected(pessoa.getIsActive());
         RegisterDateLbl.setText(pessoa.getRegisterDate().toString());
+        updateButtonStates();
     }
 
     private void selectPessoaById(Integer id) {
@@ -250,6 +303,7 @@ public class SGPViewController {
             ClassTf.setText(pessoa.getTurma());
             isActiveCheckBox.setSelected(pessoa.getIsActive());
             RegisterDateLbl.setText(pessoa.getRegisterDate().toString());
+            updateButtonStates();
         }
     }
 
@@ -274,8 +328,8 @@ public class SGPViewController {
             return;
         }
         faceRecognizer.loadModelAsync().thenRun(() -> {
-            captureImagesForTraining(pessoaId);
-
+            ImageCapture.captureImagesForTraining(pessoaId);
+            trainModel();
             Platform.runLater(() -> {
                 showAlert("A pessoa " + nameTf.getText() + " foi cadastrada com sucesso.", "INFO");
                 clearFields();
@@ -312,27 +366,55 @@ public class SGPViewController {
         ClassTf.setText("");
         isActiveCheckBox.selectedProperty().setValue(false);
         pessoaTv.getSelectionModel().clearSelection();
+        updateButtonStates();
     }
 
     private void showAlert(String msg, String type) {
         Alert alert;
         switch (type) {
-            case "ERROR":
+            case "ERROR" -> {
                 alert = new Alert(Alert.AlertType.ERROR);
                 alert.setTitle("Error: tente novamente");
-                break;
-            case "INFO":
+            }
+            case "INFO" -> {
                 alert = new Alert(Alert.AlertType.INFORMATION);
                 alert.setTitle("Informação");
-                break;
-            default:
-                alert = new Alert(Alert.AlertType.NONE);
-                break;
+            }
+            default -> alert = new Alert(Alert.AlertType.NONE);
         }
         alert.setHeaderText(null);
         alert.setContentText(msg);
         alert.showAndWait();
     }
+
+    private void filterPessoaList(String searchText) {
+        ObservableList<Pessoa> filteredList = FXCollections.observableArrayList();
+        List<Pessoa> pessoaListData = PessoaDao.getPessoaListData();
+        if (searchText == null || searchText.isEmpty()) {
+            filteredList.addAll(pessoaListData);
+            pessoaTv.setPlaceholder(new Label("Nenhum termo de pesquisa inserido."));
+            pessoaTv.setCursor(Cursor.DEFAULT);
+        } else {
+            String lowerCaseFilter = searchText.toLowerCase();
+            boolean found = false;
+            for (Pessoa pessoa : pessoaListData) {
+                if (pessoa.getNome().toLowerCase().contains(lowerCaseFilter) ||
+                        pessoa.getCpf().toLowerCase().contains(lowerCaseFilter) ||
+                        pessoa.getTurma().toLowerCase().contains(lowerCaseFilter)) {
+                    filteredList.add(pessoa);
+                    found = true;
+                }
+            }
+            if (!found) {
+                pessoaTv.setPlaceholder(new Label("Nenhum resultado com o termo \"" + searchText + "\""));
+                pessoaTv.setCursor(Cursor.DEFAULT);
+            } else {
+                pessoaTv.setCursor(Cursor.HAND);
+            }
+        }
+        pessoaTv.setItems(filteredList);
+    }
+
 
     private void toggleRecognition() {
         if (isRecognitionActive) {
@@ -355,7 +437,7 @@ public class SGPViewController {
                     captureAndRecognizeButton.getStyleClass().remove("add-btn");
                     captureAndRecognizeButton.getStyleClass().add("delete-btn");
                     lblLed.setVisible(true);
-                    sendLedCommand(Color.GRAY);
+                    ConnectionToRaspberry.sendLedCommand(Color.GRAY);
                     setTargetColor(Color.GRAY);
                     updateLedColor();
                 } else {
@@ -376,7 +458,7 @@ public class SGPViewController {
             lblLed.setFill(Color.GRAY);
             identAnchor.setVisible(false);
             registerAnchor.setVisible(false);
-            sendLedCommand(Color.BLUE);
+            ConnectionToRaspberry.sendLedCommand(Color.BLUE);
         });
         setTargetColor(Color.BLUE);
         faceDetected = false;
@@ -446,7 +528,7 @@ public class SGPViewController {
     }
 
     private void captureAndProcessFrame() {
-        Mat frame = imageCapture.captureImage();
+        Mat frame = ImageCapture.captureImage();
         if (isRecognitionActive) {
             captureAndRecognize(frame);
         } else {
@@ -458,12 +540,12 @@ public class SGPViewController {
         if (!isRecognitionActive || stopRequested) {
             return;
         }
-        Mat grayFrame = imageCapture.captureGrayscaleImage();
-        Rect[] facesArray = imageCapture.detectFaces(grayFrame);
+        Mat grayFrame = ImageCapture.captureGrayscaleImage();
+        Rect[] facesArray = ImageCapture.detectFaces(grayFrame);
         faceDetected = facesArray.length > 0;
         for (Rect face : facesArray) {
             Mat faceMat = new Mat(grayFrame, face);
-            Integer personId = faceRecognizer.recognizeAndGetId(faceMat);
+            int personId = faceRecognizer.recognizeAndGetId(faceMat);
             String label;
             if (personId != -1) {
                 //System.out.println("Pessoa reconhecida: " + personId);
@@ -540,7 +622,7 @@ public class SGPViewController {
     }
 
     private void displayFrame(Mat frame) {
-        Image imageToShow = mat2Image(frame);
+        Image imageToShow = ImageCapture.mat2Image(frame);
         Platform.runLater(() -> camImgView.setImage(imageToShow));
     }
 
@@ -558,7 +640,7 @@ public class SGPViewController {
                     lblLed.setFill(targetColor);
                     updateAnchorVisibility();
                     if (!targetColor.equals(lastSentColor)) {
-                        sendLedCommand(targetColor);
+                        ConnectionToRaspberry.sendLedCommand(targetColor);
                         lastSentColor = targetColor;
                     }
                 } else {
@@ -572,45 +654,5 @@ public class SGPViewController {
                 }
             });
         }
-    }
-
-    private void sendLedCommand(Color color) {
-        String command = "";
-        if (color.equals(Color.GRAY)) {
-            command = "0,0,1";
-        } else if (color.equals(Color.GREEN)) {
-            command = "0,1,0";
-        } else if (color.equals(Color.RED)) {
-            command = "1,0,0";
-        } else {
-            command = "0,0,0";
-        }
-        ConnectionToRaspberry.sendLedCommand(command);
-    }
-
-    private Image mat2Image(Mat frame) {
-        MatOfByte buffer = new MatOfByte();
-        Imgcodecs.imencode(".png", frame, buffer);
-        return new Image(new ByteArrayInputStream(buffer.toArray()));
-    }
-
-    private void captureImagesForTraining(int pessoaId) {
-        int numImages = 7;
-        for (int i = 0; i < numImages; i++) {
-            Mat frame = imageCapture.captureGrayscaleImage();
-            Rect[] facesArray = imageCapture.detectFaces(frame);
-            if (facesArray.length == 1) {
-                Mat face = new Mat(frame, facesArray[0]);
-                faceRecognizer.addKnownEmbedding(pessoaId, face);
-            } else {
-                i--;
-            }
-            try {
-                Thread.sleep(200);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-        trainModel();
     }
 }

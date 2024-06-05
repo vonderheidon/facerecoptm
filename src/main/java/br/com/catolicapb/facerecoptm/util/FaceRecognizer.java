@@ -21,8 +21,8 @@ import java.util.concurrent.CompletableFuture;
 
 public class FaceRecognizer {
     private Graph graph;
-    private Session session;
-    private Map<Integer, float[]> knownEmbeddings;
+    private static Session session;
+    private static Map<Integer, float[]> knownEmbeddings;
     private double threshold = 0.8;
 
     public FaceRecognizer() {
@@ -47,7 +47,7 @@ public class FaceRecognizer {
         });
     }
 
-    private Mat preprocessImage(Mat image) {
+    private static Mat preprocessImage(Mat image) {
         Mat processedImage = new Mat();
         if (image.channels() == 3) {
             Imgproc.cvtColor(image, processedImage, Imgproc.COLOR_BGR2RGB);
@@ -59,7 +59,7 @@ public class FaceRecognizer {
         return processedImage;
     }
 
-    public float[] getEmbedding(Mat image) {
+    public static float[] getEmbedding(Mat image) {
         Mat preprocessedImage = preprocessImage(image);
         FloatBuffer floatBuffer = FloatBuffer.allocate(160 * 160 * 3);
         preprocessedImage.get(0, 0, floatBuffer.array());
@@ -75,7 +75,7 @@ public class FaceRecognizer {
         return embeddingArray[0];
     }
 
-    public void addKnownEmbedding(int pessoaId, Mat image) {
+    public static void addKnownEmbedding(int pessoaId, Mat image) {
         float[] embedding = getEmbedding(image);
         try {
             EmbeddingDao.saveEmbedding(pessoaId, embedding);
