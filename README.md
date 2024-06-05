@@ -1,13 +1,12 @@
 # Facerecoptm
 
 ![GitHub repo size](https://img.shields.io/github/repo-size/iuricode/README-template?style=for-the-badge)
-
 ![GitHub language count](https://img.shields.io/github/languages/count/iuricode/README-template?style=for-the-badge)
 ![GitHub forks](https://img.shields.io/github/forks/iuricode/README-template?style=for-the-badge)
 ![Bitbucket open issues](https://img.shields.io/bitbucket/issues/iuricode/README-template?style=for-the-badge)
 ![Bitbucket open pull requests](https://img.shields.io/bitbucket/pr-raw/iuricode/README-template?style=for-the-badge)
 
-<a href="https://ibb.co/cNd2T16"><img src="https://i.ibb.co/cNd2T16/1.png" alt="1" border="0"></a> <a href="https://ibb.co/Q9zHgXL"><img src="https://i.ibb.co/Q9zHgXL/2.png" alt="2" border="0"></a> <a href="https://ibb.co/dJRwDvS"><img src="https://i.ibb.co/dJRwDvS/3.png" alt="3" border="0"></a>
+<a href="https://ibb.co/bFqm4Xs"><img src="https://i.ibb.co/bFqm4Xs/imagem-2024-06-05-130509868.png" alt="imagem-2024-06-05-130509868" border="0"></a> <a href="https://ibb.co/Q9zHgXL"><img src="https://i.ibb.co/Q9zHgXL/2.png" alt="2" border="0"></a> <a href="https://ibb.co/dJRwDvS"><img src="https://i.ibb.co/dJRwDvS/3.png" alt="3" border="0"></a>
 
 > O projeto facerecoptm busca fazer controle de acesso por meio de reconhecimento facial, utilizando do opencv e o raspberry pi, ele aciona um led dependendo da verificação facial, o que pode ser integrado em diversos cenários reais como catracas em escolas.
 ### Ajustes e melhorias
